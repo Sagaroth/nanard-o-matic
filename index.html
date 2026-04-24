@@ -581,13 +581,15 @@ var patterns_fr = [
   d => rnd(d.heroes) + ' ' + rnd(d.adj),
   d => rnd(d.heroes) + ' ' + rnd(d.lieux),
   d => rnd(d.heroes) + ' ' + rnd(d.verbes),
-  d => rnd(d.heroes) + ' ' + rnd(d.adj) + ' ' + rnd(d.lieux),
+  // plus de combo adj+lieu, trop de risques de double préposition en français
   d => rnd(d.heroes) + ' : La Vengeance ' + rnd(d.adj),
   d => rnd(d.heroes) + ' : Le Retour ' + rnd(d.lieux),
   d => rnd(d.heroes) + ' II : ' + rnd(d.adj),
   d => rnd(d.heroes) + ' III : La Revanche',
+  d => rnd(d.heroes) + ' : La Dernière Mission',
   d => 'Super ' + rnd(d.heroes) + ' ' + rnd(d.adj),
-  d => rnd(d.heroes) + ' contre ' + rnd(d.heroes),
+  // pour le "contre" on pioche dans deux genres différents pour éviter les doublons
+  d => rnd(d.heroes) + ' contre ' + rnd(d.heroes.filter(function(h) { return h !== d.heroes[0]; })),
   // celle-là j'adore, ça fait vraiment série Z italienne
   d => rnd(d.heroes) + ', ' + rnd(d.heroes) + ' et ' + rnd(d.heroes),
 ];
@@ -600,7 +602,7 @@ var patterns_en = [
   d => rnd(d.heroes) + ' II: ' + rnd(d.adj),
   d => rnd(d.heroes) + ' III: ' + rnd(d.verbes),
   d => 'Revenge of the ' + rnd(d.heroes),
-  d => 'Return of the ' + rnd(d.heroes) + ' ' + rnd(d.lieux),
+  d => rnd(d.heroes) + ': Return ' + rnd(d.lieux),
   d => 'Super ' + rnd(d.heroes) + ' ' + rnd(d.verbes),
   d => rnd(d.heroes) + ' vs ' + rnd(d.heroes),
 ];
@@ -673,13 +675,18 @@ function generateTitle() {
       titre = rnd(patterns_mix)(data.fr, data.en);
     }
 
-    // on met en valeur un mot au hasard pour faire genre affiche de film
-    var mots = titre.split(' ');
-    var idx = Math.floor(Math.random() * Math.min(mots.length, 3));
-    var html = mots.map(function(m, i) {
-      if (i === idx && m.length > 4) return '<span class="highlight">' + m + '</span>';
-      return m;
-    }).join(' ');
+    // highlight uniquement sur les titres avec sous-titre (après ":")
+    // ça fait plus affiche de film que de surligner un mot au pif
+    var html;
+    if (titre.indexOf(' : ') !== -1) {
+      var parties = titre.split(' : ');
+      html = parties[0] + ' : <span class="highlight">' + parties.slice(1).join(' : ') + '</span>';
+    } else if (titre.indexOf(': ') !== -1) {
+      var parties = titre.split(': ');
+      html = parties[0] + ': <span class="highlight">' + parties.slice(1).join(': ') + '</span>';
+    } else {
+      html = titre;
+    }
 
     el.innerHTML = '<span class="explosion">' + html + '</span>';
     el.classList.remove('fade');
