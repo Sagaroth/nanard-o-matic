@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NANARD-O-MATIC 3000</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=VT323&family=Permanent+Marker&display=swap');
+
+  :root {
+    --vhs-red: #ff0040;
+    --vhs-cyan: #00ffee;
+    --vhs-yellow: #ffee00;
+    --vhs-purple: #cc00ff;
+    --bg: #0a0008;
+    --scanline: rgba(0,0,0,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    font-family: 'VT323', monospace;
+    overflow-x: hidden;
+    position: relative;
+    cursor: crosshair;
+  }
+
+  /* Grain texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.4;
+  }
+
+  /* Scanlines */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      var(--scanline) 2px,
+      var(--scanline) 4px
+    );
+    pointer-events: none;
+    z-index: 998;
+  }
+
+  .vhs-flicker {
+    animation: flicker 8s infinite;
+  }
+
+  @keyframes flicker {
+    0%, 97%, 100% { opacity: 1; }
+    98% { opacity: 0.85; transform: translateX(2px); }
+    99% { opacity: 0.92; transform: translateX(-1px); }
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .vhs-badge {
+    display: inline-block;
+    background: var(--vhs-red);
+    color: white;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 13px;
+    letter-spacing: 4px;
+    padding: 3px 12px;
+    margin-bottom: 8px;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+
+  .title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(52px, 12vw, 100px);
+    color: var(--vhs-yellow);
+    text-shadow:
+      4px 4px 0 var(--vhs-red),
+      -2px -2px 0 var(--vhs-cyan),
+      0 0 40px rgba(255,238,0,0.4);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    animation: glitch-title 6s infinite;
+    position: relative;
+  }
+
+  @keyframes glitch-title {
+    0%, 90%, 100% { text-shadow: 4px 4px 0 var(--vhs-red), -2px -2px 0 var(--vhs-cyan), 0 0 40px rgba(255,238,0,0.4); transform: none; }
+    92% { text-shadow: -4px 4px 0 var(--vhs-red), 4px -2px 0 var(--vhs-cyan); transform: skewX(-2deg); }
+    94% { text-shadow: 6px -2px 0 var(--vhs-purple), -4px 4px 0 var(--vhs-cyan); transform: skewX(1deg); }
+    96% { text-shadow: 4px 4px 0 var(--vhs-red), -2px -2px 0 var(--vhs-cyan); transform: none; }
+  }
+
+  .subtitle {
+    font-family: 'VT323', monospace;
+    color: var(--vhs-cyan);
+    font-size: 22px;
+    letter-spacing: 6px;
+    margin-top: 4px;
+    text-shadow: 0 0 10px var(--vhs-cyan);
+  }
+
+  .divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--vhs-red), var(--vhs-yellow), var(--vhs-cyan), transparent);
+    margin: 20px 0;
+    position: relative;
+  }
+
+  /* Main display */
+  .movie-display {
+    background: rgba(0,0,0,0.6);
+    border: 2px solid var(--vhs-red);
+    padding: 30px 24px;
+    margin-bottom: 24px;
+    position: relative;
+    box-shadow: 0 0 30px rgba(255,0,64,0.3), inset 0 0 60px rgba(0,0,0,0.5);
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .movie-display::before {
+    content: 'NOW PLAYING';
+    position: absolute;
+    top: -11px;
+    left: 20px;
+    background: var(--bg);
+    color: var(--vhs-red);
+    font-size: 13px;
+    padding: 0 8px;
+    letter-spacing: 4px;
+  }
+
+  .movie-display::after {
+    content: '';
+    position: absolute;
+    top: 6px; right: 6px; bottom: 6px; left: 6px;
+    border: 1px solid rgba(255,0,64,0.2);
+    pointer-events: none;
+  }
+
+  .rec-dot {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--vhs-red);
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  .rec-dot::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--vhs-red);
+    border-radius: 50%;
+    animation: blink 1s infinite;
+    box-shadow: 0 0 6px var(--vhs-red);
+  }
+
+  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+  .movie-title-output {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(34px, 7vw, 64px);
+    text-align: center;
+    line-height: 1.05;
+    letter-spacing: 3px;
+    color: white;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.8), 0 0 20px rgba(255,238,0,0.3);
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    word-break: break-word;
+    transition: opacity 0.15s;
+  }
+
+  .movie-title-output.fade { opacity: 0; }
+
+  .movie-title-output .highlight {
+    color: var(--vhs-yellow);
+    text-shadow: 2px 2px 0 var(--vhs-red), 0 0 20px var(--vhs-yellow);
+  }
+
+  .movie-meta {
+    margin-top: 16px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .meta-tag {
+    background: rgba(255,238,0,0.1);
+    border: 1px solid var(--vhs-yellow);
+    color: var(--vhs-yellow);
+    font-size: 14px;
+    padding: 3px 10px;
+    letter-spacing: 2px;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  }
+
+  .meta-tag.cyan {
+    background: rgba(0,255,238,0.1);
+    border-color: var(--vhs-cyan);
+    color: var(--vhs-cyan);
+  }
+
+  .meta-tag.red {
+    background: rgba(255,0,64,0.1);
+    border-color: var(--vhs-red);
+    color: var(--vhs-red);
+  }
+
+  /* Bouton principal */
+  .btn-generate {
+    width: 100%;
+    background: var(--vhs-red);
+    color: white;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 32px;
+    letter-spacing: 6px;
+    border: none;
+    padding: 16px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.6), 0 0 20px rgba(255,0,64,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  }
+
+  .btn-generate:hover {
+    background: #ff2255;
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.6), 0 0 30px rgba(255,0,64,0.5);
+    transform: translateY(-2px);
+  }
+
+  .btn-generate:active {
+    transform: translateY(2px);
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+  }
+
+  .btn-generate::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.4s;
+  }
+
+  .btn-generate:hover::after { transform: translateX(100%); }
+
+  /* Options panel */
+  .options-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 500px) {
+    .options-panel { grid-template-columns: 1fr; }
+  }
+
+  .option-group {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,238,0.3);
+    padding: 12px;
+  }
+
+  .option-label {
+    color: var(--vhs-cyan);
+    font-size: 13px;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .option-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .opt-btn {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+  }
+
+  .opt-btn:hover { border-color: var(--vhs-cyan); color: var(--vhs-cyan); }
+  .opt-btn.active {
+    background: var(--vhs-cyan);
+    color: var(--bg);
+    border-color: var(--vhs-cyan);
+    font-weight: bold;
+  }
+
+  /* Historique */
+  .history-section {
+    margin-top: 28px;
+  }
+
+  .history-title {
+    color: var(--vhs-purple);
+    font-size: 16px;
+    letter-spacing: 5px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px var(--vhs-purple);
+    border-bottom: 1px solid rgba(204,0,255,0.3);
+    padding-bottom: 6px;
+  }
+
+  .history-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .history-item {
+    color: rgba(255,255,255,0.5);
+    font-size: 18px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .history-item::before { content: '▶'; color: var(--vhs-red); font-size: 10px; opacity: 0.5; }
+  .history-item:hover { color: white; background: rgba(255,255,255,0.05); }
+  .history-item:hover::before { opacity: 1; }
+
+  /* Corner decorations */
+  .corner {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--vhs-yellow);
+    border-style: solid;
+    border-width: 0;
+  }
+  .corner.tl { top: 8px; left: 8px; border-top-width: 2px; border-left-width: 2px; }
+  .corner.tr { top: 8px; right: 8px; border-top-width: 2px; border-right-width: 2px; }
+  .corner.bl { bottom: 8px; left: 8px; border-bottom-width: 2px; border-left-width: 2px; }
+  .corner.br { bottom: 8px; right: 8px; border-bottom-width: 2px; border-right-width: 2px; }
+
+  /* Tape counter */
+  .tape-counter {
+    text-align: right;
+    color: rgba(0,255,238,0.4);
+    font-size: 14px;
+    letter-spacing: 3px;
+    margin-top: 6px;
+  }
+
+  .explosion {
+    display: inline-block;
+    animation: explode 0.5s ease-out;
+  }
+
+  @keyframes explode {
+    0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  /* Glitch horizontal lines */
+  @keyframes glitch-line {
+    0%,100% { clip-path: inset(0 0 99% 0); transform: translateX(0); }
+    10% { clip-path: inset(30% 0 60% 0); transform: translateX(-4px); }
+    20% { clip-path: inset(70% 0 10% 0); transform: translateX(4px); }
+    30% { clip-path: inset(10% 0 80% 0); transform: translateX(-2px); }
+    40%,90% { clip-path: inset(0 0 99% 0); transform: translateX(0); }
+  }
+
+  footer {
+    text-align: center;
+    color: rgba(255,255,255,0.2);
+    font-size: 14px;
+    letter-spacing: 3px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+</style>
+</head>
+<body class="vhs-flicker">
+
+<div class="container">
+
+  <header class="header">
+    <div class="vhs-badge">⚡ ÉDITION SPÉCIALE VIDÉO-CLUB ⚡</div>
+    <h1 class="title">NANARD-O-MATIC</h1>
+    <div class="subtitle">— 3000 — GÉNÉRATEUR DE CHEFS-D'ŒUVRE —</div>
+  </header>
+
+  <div class="divider"></div>
+
+  <!-- Options -->
+  <div class="options-panel">
+    <div class="option-group">
+      <span class="option-label">▶ GENRE</span>
+      <div class="option-buttons" id="genre-btns">
+        <button class="opt-btn active" data-val="all">TOUT</button>
+        <button class="opt-btn" data-val="karate">KARATÉ</button>
+        <button class="opt-btn" data-val="ninja">NINJA</button>
+        <button class="opt-btn" data-val="action">ACTION</button>
+        <button class="opt-btn" data-val="sf">SCI-FI</button>
+        <button class="opt-btn" data-val="horreur">HORREUR</button>
+      </div>
+    </div>
+    <div class="option-group">
+      <span class="option-label">▶ LANGUE</span>
+      <div class="option-buttons" id="lang-btns">
+        <button class="opt-btn active" data-val="fr">FRANÇAIS</button>
+        <button class="opt-btn" data-val="en">ENGLISH</button>
+        <button class="opt-btn" data-val="mix">FRANGLAIS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Display principal -->
+  <div class="movie-display">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div class="rec-dot">REC</div>
+    <div class="movie-title-output" id="title-output">
+      <span style="color:rgba(255,255,255,0.3); font-size:22px; letter-spacing:4px;">APPUYEZ SUR GÉNÉRER</span>
+    </div>
+    <div class="movie-meta" id="movie-meta" style="display:none">
+      <span class="meta-tag" id="meta-annee"></span>
+      <span class="meta-tag cyan" id="meta-note"></span>
+      <span class="meta-tag red" id="meta-budget"></span>
+    </div>
+  </div>
+
+  <div class="tape-counter" id="counter">TITRES GÉNÉRÉS: 000</div>
+
+  <button class="btn-generate" id="btn-gen" onclick="generateTitle()">
+    🎬 GÉNÉRER UN CHEF-D'ŒUVRE 🎬
+  </button>
+
+  <!-- Historique -->
+  <div class="history-section" id="history-section" style="display:none">
+    <div class="history-title">◈ RÉCEMMENT VISIONNÉS</div>
+    <ul class="history-list" id="history-list"></ul>
+  </div>
+
+  <footer>
+    ▓▒░ NANARD-O-MATIC 3000 © 1987 PRODUCTIONS EURO-VIDÉO INTERNATIONAL ░▒▓<br>
+    <span style="font-size:11px; letter-spacing:1px;">INTERDIT AUX PERSONNES DE BON GOÛT</span>
+  </footer>
+</div>
+
+<script>
+// données des films - j'ai essayé de couvrir les grands classiques du genre
+// TODO: rajouter plus de trucs italiens (les nanards italiens c'est une mine d'or)
+var DATA = {
+  karate: {
+    fr: {
+      heroes: ['Le Ninja', 'Le Samouraï', 'Le Maître du Kung-Fu', 'Le Karatéka', 'Le Lutteur', 'Le Combattant', 'Le Justicier', 'Le Maître de Shaolin', 'L\'Impitoyable', 'Le Grand Maître'],
+      adj: ['Implacable', 'Invincible', 'Sanguinaire', 'Vengeur', 'Suprême', 'Exterminateur', 'Dévastateur', 'Mortel', 'Légendaire', 'Maudit'],
+      lieux: ['de Tokyo', 'de Shaolin', 'du Dragon Rouge', 'de l\'Enfer', 'des Montagnes Noires', 'du Désert Maudit', 'de la Mort', 'du Soleil Levant', 'de Bangkok', 'des Ombres'],
+      verbes: ['attaque', 'contre-attaque', 'frappe encore', 'se venge', 'détruit tout', 'n\'obéit plus', 'revient', 'tue sans pitié', 'entre en action', 'déchaîne l\'enfer'],
+    },
+    en: {
+      // les titres anglais c'est souvent plus court et plus percutant
+      heroes: ['The Ninja', 'The Samurai', 'Kung-Fu Master', 'Death Warrior', 'The Kickboxer', 'Shadow Ninja', 'Dragon Fist', 'Iron Monk', 'The Destroyer', 'Blood Tiger'],
+      adj: ['Invincible', 'Deadly', 'Ultimate', 'Supreme', 'Savage', 'Merciless', 'Unstoppable', 'Lethal', 'Brutal', 'Furious'],
+      lieux: ['of Death', 'from Hell', 'of the Dragon', 'from the East', 'of No Return', 'from Bangkok', 'of Shaolin', 'from the Shadows'],
+      verbes: ['Strikes Back', 'Returns', 'Goes to Hell', 'Must Die', 'Kills Again', 'Takes No Prisoners', 'Fights Back', 'Unleashed'],
+    }
+  },
+
+  ninja: {
+    fr: {
+      heroes: ['Ninja', 'Shadow Ninja', 'Le Clan des Ninjas', 'L\'Assassin Fantôme', 'La Guerrière Ninja', 'Le Ninja Rouge', 'L\'Ombre Noire', 'Le Fantôme du Dojo'],
+      adj: ['de l\'Ombre', 'Fantôme', 'Invisible', 'de la Nuit', 'Sans Visage', 'de l\'Apocalypse', 'Immortel'],
+      lieux: ['à New York', 'à Paris', 'en Enfer', 'dans les Ténèbres', 'au-delà de la Mort', 'au cœur des Flammes'],
+      verbes: ['frappe dans l\'ombre', 'n\'existe pas', 'est partout', 'tuera jusqu\'au dernier', 'venge les siens'],
+    },
+    en: {
+      heroes: ['Ninja', 'Shadow Warrior', 'The Ghost Ninja', 'Night Assassin', 'Phantom Blade', 'Death Shadow', 'Black Ninja', 'Invisible Killer'],
+      adj: ['in the Shadows', 'of Death', 'from the Dark', 'Unseen', 'Unstoppable', 'Eternal'],
+      lieux: ['in New York', 'in L.A.', 'in Hell', 'in the Darkness'],
+      verbes: ['Strikes', 'Kills', 'Returns from the Dead', 'Has No Mercy', 'Will Hunt You Down'],
+    }
+  },
+
+  action: {
+    fr: {
+      heroes: ['L\'Exécuteur', 'Le Justicier', 'Le Cobra', 'Le Terminator', 'L\'Élite', 'Le Commando', 'La Machine de Guerre', 'L\'Agent Secret', 'Le Mercenaire', 'Delta Force'],
+      // les adjectifs action c'est surtout des syntagmes nominaux en vrai
+      adj: ['en Mission Suicide', 'Force Maximale', 'Ultime', 'Operation Mort', 'Carnage Total', 'Point de Non-Retour', 'Code Rouge', 'Alerte Maximale'],
+      lieux: ['en Enfer', 'à Beyrouth', 'dans la Jungle', 'dans les Rues', 'en territoire ennemi', 'en zone de guerre', 'derrière les lignes ennemies'],
+      verbes: ['contre les Ninjas', 'contre la Mafia', 'contre les Terroristes', 'contre la Mort', 'contre tous', 'en Flammes'],
+    },
+    en: {
+      heroes: ['The Executor', 'Cobra', 'The Machine', 'Delta Force', 'Command Unit', 'Street Justice', 'The Terminator', 'Iron Eagle', 'The Commando', 'Death Squad'],
+      adj: ['Maximum Force', 'Total Carnage', 'Point of No Return', 'Code Red', 'Operation Death', 'Full Impact', 'Code Viper', 'Operation Bloodstrike'],
+      lieux: ['in the Jungle', 'Behind Enemy Lines', 'in Hell', 'in the Streets', 'in the War Zone'],
+      verbes: ['Goes to War', 'vs The Mafia', 'vs All', 'Fights Back', 'in Flames'],
+    }
+  },
+
+  sf: {
+    fr: {
+      heroes: ['L\'Androïde', 'Le Cyborg', 'Le Mutant', 'L\'Alien Tueur', 'Le Robot Exterminateur', 'Le Chasseur de Primes Galactique', 'Le Guerrier du Futur', 'L\'Envahisseur'],
+      adj: ['du Futur', 'de l\'Espace', 'Atomique', 'Nucléaire', 'Galactique', 'Cybernétique', 'Cosmique', 'Intergalactique'],
+      lieux: ['an 2000', 'an 2050', 'dans la Galaxie', 'sur la Planète Mort', 'dans le Vide Spatial', 'après l\'Apocalypse'],
+      verbes: ['contre les Humains', 'contre les Machines', 'dévore tout', 'envahit la Terre', 'contre l\'Humanité'],
+    },
+    en: {
+      heroes: ['The Android', 'Cyborg', 'The Mutant', 'Alien Destroyer', 'Robot Warrior', 'Galactic Hunter', 'Space Soldier', 'The Invader'],
+      adj: ['from the Future', 'from Space', 'Atomic', 'Galactic', 'Cosmic', 'Nuclear', 'Intergalactic'],
+      lieux: ['Year 2000', 'in Space', 'on Death Planet', 'After the Apocalypse', 'in the Galaxy'],
+      verbes: ['vs Mankind', 'Invades Earth', 'Destroys All', 'Must Be Stopped', 'from Outer Space'],
+    }
+  },
+
+  horreur: {
+    fr: {
+      heroes: ['La Créature', 'Le Monstre', 'La Bête', 'Le Démon', 'L\'Esprit Maléfique', 'La Chose', 'Le Vampire', 'Le Loup-Garou', 'La Momie', 'Le Zombie'],
+      adj: ['Maudite', 'de l\'Au-Delà', 'Sanguinaire', 'Immortelle', 'des Enfers', 'Démoniaque', 'Terrifiante', 'Maléfique'],
+      lieux: ['du Lac Noir', 'des Marais', 'du Château Maudit', 'de la Crypte', 'du Cimetière', 'de la Forêt Sombre', 'de la Maison Hantée'],
+      verbes: ['revient hanter', 'dévore les vivants', 'ne dort jamais', 'rôde la nuit', 'ressuscite', 'attaque de nuit'],
+    },
+    en: {
+      heroes: ['The Creature', 'The Beast', 'The Demon', 'The Thing', 'Vampire', 'Werewolf', 'The Mummy', 'The Zombie', 'The Evil Spirit', 'The Monster'],
+      adj: ['of the Night', 'from Hell', 'Undead', 'from the Swamp', 'of the Dark', 'Blood-Thirsty', 'Cursed'],
+      lieux: ['of the Black Lake', 'of the Haunted House', 'of the Crypt', 'from the Graveyard', 'of the Dark Forest'],
+      verbes: ['Rises Again', 'Never Dies', 'Walks at Night', 'Hunts the Living', 'Returns from the Grave'],
+    }
+  }
+};
+
+// patterns de construction des titres
+// inspiré des vrais titres : Ninja III: The Domination, American Ninja, Death Wish, etc.
+var patterns_fr = [
+  d => rnd(d.heroes) + ' ' + rnd(d.adj),
+  d => rnd(d.heroes) + ' ' + rnd(d.lieux),
+  d => rnd(d.heroes) + ' ' + rnd(d.verbes),
+  d => rnd(d.heroes) + ' ' + rnd(d.adj) + ' ' + rnd(d.lieux),
+  d => 'La Vengeance ' + rnd(d.heroes) + ' ' + rnd(d.adj),
+  d => 'Le Retour ' + rnd(d.heroes) + ' ' + rnd(d.lieux),
+  d => rnd(d.heroes) + ' II : ' + rnd(d.adj),
+  d => rnd(d.heroes) + ' III : La Revanche',
+  d => 'Super ' + rnd(d.heroes) + ' ' + rnd(d.adj),
+  d => rnd(d.heroes) + ' contre ' + rnd(d.heroes),
+  // celle-là j'adore, ça fait vraiment série Z italienne
+  d => rnd(d.heroes) + ', ' + rnd(d.heroes) + ' et ' + rnd(d.heroes),
+];
+
+var patterns_en = [
+  d => rnd(d.heroes) + ' ' + rnd(d.adj),
+  d => rnd(d.heroes) + ' ' + rnd(d.lieux),
+  d => rnd(d.heroes) + ' ' + rnd(d.verbes),
+  d => rnd(d.heroes) + ': ' + rnd(d.adj),
+  d => rnd(d.heroes) + ' II: ' + rnd(d.adj),
+  d => rnd(d.heroes) + ' III: ' + rnd(d.verbes),
+  d => 'Revenge of the ' + rnd(d.heroes),
+  d => 'Return of the ' + rnd(d.heroes) + ' ' + rnd(d.lieux),
+  d => 'Super ' + rnd(d.heroes) + ' ' + rnd(d.verbes),
+  d => rnd(d.heroes) + ' vs ' + rnd(d.heroes),
+];
+
+// le franglais c'est le vrai truc des années 80, genre "Ninja Terminator" sorti en France
+// comme "Le Ninja Invincible" mais le titre original c'était juste "Ninja Terminator"
+var patterns_mix = [
+  (a, b) => rnd(b.heroes) + ' ' + rnd(a.adj),
+  (a, b) => 'Super ' + rnd(b.heroes) + ' ' + rnd(a.adj),
+  (a, b) => rnd(a.heroes) + ' vs ' + rnd(b.heroes),
+  (a, b) => rnd(b.heroes) + ' contre ' + rnd(a.lieux),
+  (a, b) => rnd(b.heroes) + ' : ' + rnd(a.adj),
+  (a, b) => rnd(a.heroes) + ' in ' + rnd(b.lieux),
+  (a, b) => rnd(b.heroes) + ' ' + rnd(a.verbes),
+];
+
+var annees = ['1982', '1983', '1985', '1986', '1987', '1988', '1989', '1990', '1991', '1992', '1993'];
+// les notes c'est volontairement mauvaises, c'est le principe du nanard
+var notes = ['★★☆☆☆ 2/5', '★☆☆☆☆ 1/5', '★★★☆☆ 3/5', '0/5 ★☆☆☆☆', '1.5/5 ★☆☆☆☆'];
+var budgets = ['1 200 $', '3 500 $', '800 $', '42 000 F', '15 000 $', '0,50 $ + sandwich', 'Budget inconnu'];
+
+function rnd(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+var nbGeneres = 0;
+var genreActif = 'all';
+var langueActive = 'fr';
+var historique = [];
+
+document.querySelectorAll('#genre-btns .opt-btn').forEach(function(btn) {
+  btn.onclick = function() {
+    document.querySelectorAll('#genre-btns .opt-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    genreActif = btn.dataset.val;
+  };
+});
+
+document.querySelectorAll('#lang-btns .opt-btn').forEach(function(btn) {
+  btn.onclick = function() {
+    document.querySelectorAll('#lang-btns .opt-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    langueActive = btn.dataset.val;
+  };
+});
+
+function getGenre() {
+  if (genreActif != 'all') return genreActif;
+  var keys = Object.keys(DATA);
+  return keys[Math.floor(Math.random() * keys.length)];
+}
+
+function generateTitle() {
+  var el = document.getElementById('title-output');
+  var metaZone = document.getElementById('movie-meta');
+
+  el.classList.add('fade');
+
+  setTimeout(function() {
+    var genre = getGenre();
+    var data = DATA[genre];
+    var titre = '';
+
+    if (langueActive === 'fr') {
+      titre = rnd(patterns_fr)(data.fr);
+    } else if (langueActive === 'en') {
+      titre = rnd(patterns_en)(data.en);
+    } else {
+      // franglais - mix des deux
+      titre = rnd(patterns_mix)(data.fr, data.en);
+    }
+
+    // on met en valeur un mot au hasard pour faire genre affiche de film
+    var mots = titre.split(' ');
+    var idx = Math.floor(Math.random() * Math.min(mots.length, 3));
+    var html = mots.map(function(m, i) {
+      if (i === idx && m.length > 2) return '<span class="highlight">' + m + '</span>';
+      return m;
+    }).join(' ');
+
+    el.innerHTML = '<span class="explosion">' + html + '</span>';
+    el.classList.remove('fade');
+
+    document.getElementById('meta-annee').textContent = rnd(annees);
+    document.getElementById('meta-note').textContent = rnd(notes);
+    document.getElementById('meta-budget').textContent = 'BUDGET: ' + rnd(budgets);
+    metaZone.style.display = 'flex';
+
+    nbGeneres++;
+    document.getElementById('counter').textContent = 'TITRES GÉNÉRÉS: ' + String(nbGeneres).padStart(3, '0');
+
+    var titreMaj = titre.toUpperCase();
+    if (historique.indexOf(titreMaj) === -1) {
+      historique.unshift(titreMaj);
+      if (historique.length > 6) historique.pop();
+      majHistorique();
+    }
+
+    // flash jaune sur le bouton
+    var btn = document.getElementById('btn-gen');
+    btn.style.background = '#ffee00';
+    btn.style.color = '#000';
+    setTimeout(function() { btn.style.background = ''; btn.style.color = ''; }, 120);
+
+  }, 150);
+}
+
+function majHistorique() {
+  var section = document.getElementById('history-section');
+  var liste = document.getElementById('history-list');
+  section.style.display = 'block';
+  liste.innerHTML = historique.map(function(t) {
+    return '<li class="history-item" onclick="setTitle(this)">' + t + '</li>';
+  }).join('');
+}
+
+function setTitle(el) {
+  document.getElementById('title-output').innerHTML = '<span class="explosion">' + el.textContent + '</span>';
+}
+
+// espace ou entrée pour générer sans cliquer
+document.addEventListener('keydown', function(e) {
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    generateTitle();
+  }
+});
+</script>
+</body>
+</html>
