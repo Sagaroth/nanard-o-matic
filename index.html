@@ -560,16 +560,17 @@ var DATA = {
 
   horreur: {
     fr: {
-      heroes: ['La Créature', 'Le Monstre', 'La Bête', 'Le Démon', 'L\'Esprit Maléfique', 'La Chose', 'Le Vampire', 'Le Loup-Garou', 'La Momie', 'Le Zombie'],
-      adj: ['Maudite', 'de l\'Au-Delà', 'Sanguinaire', 'Immortelle', 'des Enfers', 'Démoniaque', 'Terrifiante', 'Maléfique'],
-      lieux: ['du Lac Noir', 'des Marais', 'du Château Maudit', 'de la Crypte', 'du Cimetière', 'de la Forêt Sombre', 'de la Maison Hantée'],
-      verbes: ['revient hanter', 'dévore les vivants', 'ne dort jamais', 'rôde la nuit', 'ressuscite', 'attaque de nuit'],
+      // ajout de l'univers Bloody Mallory : chasseuses de démons, gothic pulp, héroïnes badass
+      heroes: ['La Créature', 'Le Monstre', 'La Bête', 'Le Démon', 'L\'Esprit Maléfique', 'La Chose', 'Le Vampire', 'Le Loup-Garou', 'La Momie', 'Le Zombie', 'La Chasseuse de Démons', 'La Veuve Sanglante', 'L\'Exorciste Maudite', 'La Guerrière de l\'Enfer', 'Bloody Mallory'],
+      adj: ['Maudite', 'de l\'Au-Delà', 'Sanguinaire', 'Immortelle', 'des Enfers', 'Démoniaque', 'Terrifiante', 'Maléfique', 'Ensanglantée', 'de l\'Apocalypse', 'Gothique', 'Infernale'],
+      lieux: ['du Lac Noir', 'des Marais', 'du Château Maudit', 'de la Crypte', 'du Cimetière', 'de la Forêt Sombre', 'de la Maison Hantée', 'des Portes de l\'Enfer', 'du Vatican Maudit', 'des Ténèbres Éternelles'],
+      verbes: ['revient hanter', 'dévore les vivants', 'ne dort jamais', 'rôde la nuit', 'ressuscite', 'attaque de nuit', 'chasse les démons', 'tue les immortels', 'ouvre les portes de l\'enfer', 'ne pardonne pas'],
     },
     en: {
-      heroes: ['The Creature', 'The Beast', 'The Demon', 'The Thing', 'Vampire', 'Werewolf', 'The Mummy', 'The Zombie', 'The Evil Spirit', 'The Monster'],
-      adj: ['of the Night', 'from Hell', 'Undead', 'from the Swamp', 'of the Dark', 'Blood-Thirsty', 'Cursed'],
-      lieux: ['of the Black Lake', 'of the Haunted House', 'of the Crypt', 'from the Graveyard', 'of the Dark Forest'],
-      verbes: ['Rises Again', 'Never Dies', 'Walks at Night', 'Hunts the Living', 'Returns from the Grave'],
+      heroes: ['The Creature', 'The Beast', 'The Demon', 'The Thing', 'Vampire', 'Werewolf', 'The Mummy', 'The Zombie', 'The Evil Spirit', 'The Monster', 'Bloody Mallory', 'The Demon Huntress', 'The Cursed Widow', 'Hell\'s Warrior'],
+      adj: ['of the Night', 'from Hell', 'Undead', 'from the Swamp', 'of the Dark', 'Blood-Thirsty', 'Cursed', 'of the Apocalypse', 'Infernal', 'Gothic'],
+      lieux: ['of the Black Lake', 'of the Haunted House', 'of the Crypt', 'from the Graveyard', 'of the Dark Forest', 'of Hell\'s Gate', 'of the Cursed Vatican', 'from the Eternal Darkness'],
+      verbes: ['Rises Again', 'Never Dies', 'Walks at Night', 'Hunts the Living', 'Returns from the Grave', 'Hunts Demons', 'Opens the Gates of Hell', 'Kills the Immortals'],
     }
   }
 };
@@ -581,8 +582,8 @@ var patterns_fr = [
   d => rnd(d.heroes) + ' ' + rnd(d.lieux),
   d => rnd(d.heroes) + ' ' + rnd(d.verbes),
   d => rnd(d.heroes) + ' ' + rnd(d.adj) + ' ' + rnd(d.lieux),
-  d => 'La Vengeance ' + rnd(d.heroes) + ' ' + rnd(d.adj),
-  d => 'Le Retour ' + rnd(d.heroes) + ' ' + rnd(d.lieux),
+  d => rnd(d.heroes) + ' : La Vengeance ' + rnd(d.adj),
+  d => rnd(d.heroes) + ' : Le Retour ' + rnd(d.lieux),
   d => rnd(d.heroes) + ' II : ' + rnd(d.adj),
   d => rnd(d.heroes) + ' III : La Revanche',
   d => 'Super ' + rnd(d.heroes) + ' ' + rnd(d.adj),
